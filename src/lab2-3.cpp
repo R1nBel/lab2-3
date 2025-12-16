@@ -1,14 +1,10 @@
 ﻿#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#include <psapi.h>
-
 #include "BigInt.cpp"
 #include <iostream>
 #include <set>
 #include <map>
 #include <chrono>
 #include <fstream>
-#include <crtdbg.h>
 
 void operations_count_pow_exp_experiments(unsigned long base_digits, unsigned long min_exp, unsigned long max_exp, unsigned long step_exp, int seed, int quantity_per_exp)
 {
