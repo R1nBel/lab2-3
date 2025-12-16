@@ -399,51 +399,6 @@ public:
         return q;
     }
 
-    const BigInt mulMod(const BigInt& x, const BigInt& y) const
-    {
-        BigInt mod = *this;
-
-        BigInt a = x;
-
-        BigInt b = y;
-
-        BigInt res(0);
-
-        if (a >= mod)
-        {
-            a = a - mod;
-        }
-
-        if (b >= mod)
-        {
-            b = b - mod;
-        }
-
-        while (!b.isZero())
-        {
-            
-            if (b.isOdd())
-            {
-                res = res + a;
-
-                if (res >= mod)
-                {
-                    res = res - mod;
-                    
-                }
-            }
-
-            a = a + a;
-            
-            if (a >= mod)
-            {
-                a = a - mod;
-            }
-            b = b.div2();
-        }
-        return res;
-    }
-
 private:
     static int absCompare(const BigInt& x, const BigInt& y) 
     {

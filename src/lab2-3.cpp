@@ -215,113 +215,6 @@ void manual_pow_test(int quantity)
     }
 }
 
-long long getCurrentMemoryUsage() {
-    PROCESS_MEMORY_COUNTERS pmc;
-    if (GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc))) {
-        return pmc.WorkingSetSize;
-    }
-    return 0;
-}
-
-void mulmod_experiments(unsigned long max, unsigned long mod_max, int seed, int quantity)
-{
-    std::ofstream csv_file("../experiments/experiments_mulmod.csv");
-    if (!csv_file.is_open())
-    {
-        std::cerr << "Error: Cannot open experiments_mulmod.csv for writing!" << std::endl;
-        return;
-    }
-
-    csv_file << "experiment_number;a;b;mod;memory_before_bytes;memory_after_bytes;memory_diff_bytes" << std::endl;
-
-    std::cout << "Starting mulMod experiments with memory measurement..." << std::endl;
-    std::cout << "CSV file: experiments_mulmod.csv" << std::endl;
-    std::cout << "------------------------------------------------" << std::endl;
-
-    srand(seed);
-    std::set<std::tuple<BigInt, BigInt, BigInt>> used;
-
-    _CrtMemState state1, state2, diff;
-
-    for (int i = 0; i < quantity; )
-    {
-        BigInt a, b, mod;
-
-        for (unsigned long j = 0; j < max; j++)
-        {
-            unsigned long x = 0;
-            for (int k = 0; k < 3; k++)
-            {
-                x *= 1000;
-                x += rand() % 1000;
-            }
-            a = a.mulShort(1000000000) + BigInt(x);
-        }
-
-        for (unsigned long j = 0; j < max; j++)
-        {
-            unsigned long x = 0;
-            for (int k = 0; k < 3; k++)
-            {
-                x *= 1000;
-                x += rand() % 1000;
-            }
-            b = b.mulShort(1000000000) + BigInt(x);
-        }
-
-        for (unsigned long j = 0; j < mod_max; j++)
-        {
-            unsigned long x = 0;
-            for (int k = 0; k < 3; k++)
-            {
-                x *= 1000;
-                x += rand() % 1000;
-            }
-            mod = mod.mulShort(1000000000) + BigInt(x);
-        }
-
-        auto key = std::make_tuple(a, b, mod);
-        if (used.count(key)) continue;
-        used.insert(key);
-
-        long long memory_before = getCurrentMemoryUsage();
-        _CrtMemCheckpoint(&state1);
-
-        BigInt result = mod.mulMod(a, b);
-
-        _CrtMemCheckpoint(&state2);
-
-        long long memory_after = getCurrentMemoryUsage();
-        long long memory_diff = memory_after - memory_before;
-
-        csv_file << i << ";"
-            << "\"" << a.toString() << "\";"
-            << "\"" << b.toString() << "\";"
-            << "\"" << mod.toString() << "\";"
-            << memory_before << ";"
-            << memory_after << ";"
-            << memory_diff << std::endl;
-
-        std::cout << "Experiment #" << i
-            << ", memory before = " << memory_before / 1024 << " KB"
-            << ", memory after = " << memory_after / 1024 << " KB"
-            << ", diff = " << memory_diff / 1024 << " KB"
-            << std::endl;
-
-        i++;
-
-        if (_CrtMemDifference(&diff, &state1, &state2)) {
-            _CrtMemDumpStatistics(&diff);
-        }
-    }
-
-    csv_file.close();
-
-    std::cout << "------------------------------------------------" << std::endl;
-    std::cout << "All mulMod experiments completed!" << std::endl;
-    std::cout << "Data saved to experiments_mulmod.csv" << std::endl;
-}
-
 int main()
 {
     //manual_pow_test(5);
@@ -329,8 +222,6 @@ int main()
     //operations_count_pow_exp_experiments(32, 2, 2048, 2, 0, 1);
 
     //operations_count_pow_base_experiments(1, 64, 1, 64, 0, 10);
-
-    mulmod_experiments(10, 10, 0, 100);
 
     return 0;
 }
