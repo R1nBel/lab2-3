@@ -64,7 +64,7 @@ void operations_count_pow_exp_experiments(unsigned long base_digits, unsigned lo
 
             std::cout << "  Experiment #" << experiment_idx
                 << " exp = " << exp
-                << ", time = " << duration.count() << " µs" << std::endl;
+                << ", time = " << duration.count() << " micros" << std::endl;
 
             experiment_idx++;
         }
@@ -75,7 +75,7 @@ void operations_count_pow_exp_experiments(unsigned long base_digits, unsigned lo
             << avg_time << std::endl;
 
         std::cout << "AVERAGE for exponent " << exp
-            << ": time = " << avg_time << " µs" << std::endl;
+            << ": time = " << avg_time << " micros" << std::endl;
         std::cout << "------------------------------------------------" << std::endl;
     }
 
@@ -133,7 +133,7 @@ void operations_count_pow_base_experiments(unsigned long min_blocks, unsigned lo
 
             std::cout << "Experiment #" << experiment_idx
                 << ", base blocks = " << blocks
-                << ", time = " << duration.count() << " µs" << std::endl;
+                << ", time = " << duration.count() << " micros" << std::endl;
 
             experiment_idx++;
         }
@@ -144,7 +144,7 @@ void operations_count_pow_base_experiments(unsigned long min_blocks, unsigned lo
             << avg_time << std::endl;
 
         std::cout << "AVERAGE for base blocks " << blocks
-            << ": time = " << avg_time << " µs" << std::endl;
+            << ": time = " << avg_time << " micros" << std::endl;
         std::cout << "------------------------------------------------" << std::endl;
     }
 

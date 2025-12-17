@@ -228,7 +228,7 @@ BigInt BigInt::bigPow(long long exponent) const
 
     BigInt tmp;
 
-    size_t initialCapacity = result.size + base.size + 4;
+    size_t initialCapacity = result.size + base.size;
     tmp.reserve(initialCapacity);
 
     while (exponent > 0)
