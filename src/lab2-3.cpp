@@ -1,10 +1,13 @@
 ﻿#define WIN32_LEAN_AND_MEAN
-#include "BigInt.cpp"
+#include "BigInt.h"
 #include <iostream>
-#include <set>
-#include <map>
+#include <cstdlib>
+#include <ctime>
 #include <chrono>
 #include <fstream>
+#include <string>
+#include <limits>
+#include <vector>
 
 void operations_count_pow_exp_experiments(unsigned long base_digits, unsigned long min_exp, unsigned long max_exp, unsigned long step_exp, int seed, int quantity_per_exp)
 {
@@ -17,30 +20,30 @@ void operations_count_pow_exp_experiments(unsigned long base_digits, unsigned lo
 
     csv_file << "experiment_number;exponent;avg_time_microseconds" << std::endl;
 
-    srand(seed);
+    srand(static_cast<unsigned int>(seed));
 
     int experiment_idx = 0;
 
-    vector<BigInt> bases;
+    std::vector<BigInt> bases;
+    bases.reserve(quantity_per_exp);
 
     for (int q = 0; q < quantity_per_exp; q++)
     {
         std::string num_str;
         num_str.reserve(base_digits);
 
-        for (unsigned long d = 0; d < base_digits; d++)
+        num_str += static_cast<char>('1' + rand() % 9);
+
+        for (unsigned long d = 1; d < base_digits; d++)
         {
-            int digit = (d == 0) ? 1 + rand() % 9 : rand() % 10;
-            num_str += std::to_string(digit);
+            num_str += static_cast<char>('0' + rand() % 10);
         }
 
-        BigInt a(num_str);
-        bases.push_back(a);
+        bases.emplace_back(num_str.c_str());
     }
 
     std::cout << "Exponent experiments from " << min_exp
         << " to " << max_exp << " step " << step_exp << std::endl;
-
     std::cout << "Each exponent receives " << quantity_per_exp << " experiments" << std::endl;
     std::cout << "------------------------------------------------" << std::endl;
 
@@ -48,36 +51,32 @@ void operations_count_pow_exp_experiments(unsigned long base_digits, unsigned lo
     {
         std::cout << "Processing exponent = " << exp << std::endl;
 
-        unsigned long long sum_time = 0;
-        unsigned long long sum_ops = 0;
+        long long sum_time = 0;
 
         for (int q = 0; q < quantity_per_exp; q++)
         {
             auto start = std::chrono::high_resolution_clock::now();
-            bases[q].bigPow(exp);
+            BigInt result = bases[q].bigPow(static_cast<long long>(exp));
             auto end = std::chrono::high_resolution_clock::now();
 
             auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-
-            sum_time += duration.count();
+            sum_time += static_cast<long long>(duration.count());
 
             std::cout << "  Experiment #" << experiment_idx
                 << " exp = " << exp
-                << ", time = " << duration.count() << std::endl;
+                << ", time = " << duration.count() << " µs" << std::endl;
+
+            experiment_idx++;
         }
 
-        unsigned long long avg_time = sum_time / quantity_per_exp;
-
-        csv_file << experiment_idx << ";"
+        long long avg_time = sum_time / quantity_per_exp;
+        csv_file << experiment_idx - quantity_per_exp << ";"
             << exp << ";"
             << avg_time << std::endl;
 
         std::cout << "AVERAGE for exponent " << exp
-            << ": time = " << avg_time << std::endl;
-
+            << ": time = " << avg_time << " µs" << std::endl;
         std::cout << "------------------------------------------------" << std::endl;
-
-        experiment_idx++;
     }
 
     csv_file.close();
@@ -89,13 +88,13 @@ void operations_count_pow_base_experiments(unsigned long min_blocks, unsigned lo
     std::ofstream csv_file("../experiments/experiments_data_base.csv");
     if (!csv_file.is_open())
     {
-        std::cerr << "Error: Cannot open base_dependence.csv for writing!" << std::endl;
+        std::cerr << "Error: Cannot open experiments_data_base.csv for writing!" << std::endl;
         return;
     }
 
     csv_file << "experiment_number;base_blocks;avg_time_microseconds" << std::endl;
 
-    srand(seed);
+    srand(static_cast<unsigned int>(seed));
 
     int experiment_idx = 0;
 
@@ -107,50 +106,46 @@ void operations_count_pow_base_experiments(unsigned long min_blocks, unsigned lo
     {
         std::cout << "Generating bases with " << blocks << " blocks" << std::endl;
 
-        unsigned long long sum_time = 0;
-        unsigned long long sum_ops = 0;
+        long long sum_time = 0;
 
         for (int e = 0; e < experiments_per_size; e++)
         {
-            BigInt a;
+            BigInt a(1LL);
 
             for (unsigned long j = 0; j < blocks; j++)
             {
-                unsigned long block = 0;
+                unsigned int block_val = 0;
                 for (int k = 0; k < 3; k++)
                 {
-                    block *= 1000;
-                    block += rand() % 1000;
+                    block_val *= 1000;
+                    block_val += rand() % 1000;
                 }
-                a = a.mulShort(1000000000) + BigInt(block);
+
+                a = a.mulShort(BigInt::BASE) + BigInt(static_cast<long long>(block_val));
             }
 
             auto start = std::chrono::high_resolution_clock::now();
-            a.bigPow(exponent);
+            BigInt result = a.bigPow(static_cast<long long>(exponent));
             auto end = std::chrono::high_resolution_clock::now();
 
-            auto duration =
-                std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-
-            sum_time += duration.count();
+            auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+            sum_time += static_cast<long long>(duration.count());
 
             std::cout << "Experiment #" << experiment_idx
                 << ", base blocks = " << blocks
-                << ", time = " << duration.count() << " micros" << std::endl;
+                << ", time = " << duration.count() << " µs" << std::endl;
+
+            experiment_idx++;
         }
 
-        unsigned long long avg_time = sum_time / experiments_per_size;
-
-        csv_file << experiment_idx << ";"
+        long long avg_time = sum_time / experiments_per_size;
+        csv_file << experiment_idx - experiments_per_size << ";"
             << blocks << ";"
-            << avg_time << ";" << std::endl;
+            << avg_time << std::endl;
 
         std::cout << "AVERAGE for base blocks " << blocks
-            << ": time = " << avg_time << std::endl;
-
+            << ": time = " << avg_time << " µs" << std::endl;
         std::cout << "------------------------------------------------" << std::endl;
-
-        experiment_idx++;
     }
 
     csv_file.close();
@@ -164,7 +159,7 @@ void manual_pow_test(int quantity)
 
     for (int i = 0; i < quantity; i++)
     {
-        int a;
+        long long a;
         unsigned long m;
 
         std::cout << "Enter SMALL base: ";
@@ -172,22 +167,55 @@ void manual_pow_test(int quantity)
         std::cout << "Enter exp: ";
         std::cin >> m;
 
-        BigInt bigA = a;
+        BigInt bigA(a);
 
-        BigInt result = bigA.bigPow(m);
+        BigInt result = bigA.bigPow(static_cast<long long>(m));
 
-        unsigned long long ethalon_result = 1;
-
+        long long ethalon_result = 1;
         bool overflow = false;
+
+        auto safe_multiply = [&](long long x, long long y) -> bool {
+            if (x == 0 || y == 0) {
+                ethalon_result = 0;
+                return true;
+            }
+
+            if (x > 0) {
+                if (y > 0) {
+                    if (x > std::numeric_limits<long long>::max() / y) {
+                        return false;
+                    }
+                }
+                else if (y < 0) {
+                    if (y < std::numeric_limits<long long>::min() / x) {
+                        return false;
+                    }
+                }
+            }
+            else if (x < 0) {
+                if (y > 0) {
+                    if (x < std::numeric_limits<long long>::min() / y) {
+                        return false;
+                    }
+                }
+                else if (y < 0) {
+                    if (x < std::numeric_limits<long long>::max() / y) {
+                        return false;
+                    }
+                }
+            }
+
+            ethalon_result = x * y;
+            return true;
+        };
 
         for (unsigned long j = 0; j < m; j++)
         {
-            if (ethalon_result > ULLONG_MAX / a)
+            if (!safe_multiply(ethalon_result, a))
             {
                 overflow = true;
                 break;
             }
-            ethalon_result *= a;
         }
 
         if (overflow)
@@ -196,15 +224,23 @@ void manual_pow_test(int quantity)
             continue;
         }
 
-        std::cout << "Test #" << i << ": base = " << a << ", exp = " << m << ", required result = " << ethalon_result << ", result = " << result;
+        BigInt bigEthalon(ethalon_result);
 
-        if (result == ethalon_result)
+        std::cout << "Test #" << i
+            << ": base = " << a
+            << ", exp = " << m
+            << ", required result = " << ethalon_result
+            << ", result = " << result.toChar();
+
+        if (result == bigEthalon)
         {
             std::cout << " - Passed";
         }
         else
         {
             std::cout << " - Not Passed";
+            std::cout << "\n  Expected: " << bigEthalon.toChar();
+            std::cout << "\n  Got: " << result.toChar();
         }
 
         std::cout << std::endl;
@@ -215,7 +251,7 @@ int main()
 {
     //manual_pow_test(5);
 
-    //operations_count_pow_exp_experiments(32, 2, 2048, 2, 0, 1);
+    operations_count_pow_exp_experiments(32, 2, 2048, 2, 0, 1);
 
     //operations_count_pow_base_experiments(1, 64, 1, 64, 0, 10);
 
