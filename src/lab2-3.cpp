@@ -16,7 +16,7 @@ void operations_count_pow_exp_experiments(unsigned long base_digits, unsigned lo
     std::tm localTime{};
     localtime_s(&localTime, &now);
     char buffer[100];
-    std::strftime(buffer, sizeof(buffer), "%Y.%m.%d_%H:%M", &localTime);
+    std::strftime(buffer, sizeof(buffer), "%Y-%m-%d_%H-%M", &localTime);
 
     std::string filename = "../experiments/experiments_data_exp_" + std::string(buffer) + ".csv";
     std::ofstream csv_file(filename);
@@ -98,7 +98,7 @@ void operations_count_pow_base_experiments(unsigned long min_blocks, unsigned lo
     localtime_s(&localTime, &now);
 
     char buffer[100];
-    std::strftime(buffer, sizeof(buffer), "%Y.%m.%d_%H:%M", &localTime);
+    std::strftime(buffer, sizeof(buffer), "%Y-%m-%d_%H-%M", &localTime);
 
     std::string filename = "../experiments/experiments_data_base_" + std::string(buffer) + ".csv";
 
