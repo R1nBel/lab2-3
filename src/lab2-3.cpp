@@ -8,13 +8,21 @@
 #include <string>
 #include <limits>
 #include <vector>
+#include <ctime>
 
 void operations_count_pow_exp_experiments(unsigned long base_digits, unsigned long min_exp, unsigned long max_exp, unsigned long step_exp, int seed, int quantity_per_exp)
 {
-    std::ofstream csv_file("../experiments/experiments_data_exp.csv");
+    std::time_t now = std::time(nullptr);
+    std::tm localTime{};
+    localtime_s(&localTime, &now);
+    char buffer[100];
+    std::strftime(buffer, sizeof(buffer), "%Y.%m.%d_%H:%M", &localTime);
+
+    std::string filename = "../experiments/experiments_data_exp_" + std::string(buffer) + ".csv";
+    std::ofstream csv_file(filename);
     if (!csv_file.is_open())
     {
-        std::cerr << "Error: Cannot open experiments_data_exp.csv for writing!" << std::endl;
+        std::cerr << "Error: Cannot open .csv for writing!" << std::endl;
         return;
     }
 
@@ -85,10 +93,19 @@ void operations_count_pow_exp_experiments(unsigned long base_digits, unsigned lo
 
 void operations_count_pow_base_experiments(unsigned long min_blocks, unsigned long max_blocks, unsigned long step_blocks, unsigned long exponent, int seed, int experiments_per_size)
 {
-    std::ofstream csv_file("../experiments/experiments_data_base.csv");
+    std::time_t now = std::time(nullptr);
+    std::tm localTime{};
+    localtime_s(&localTime, &now);
+
+    char buffer[100];
+    std::strftime(buffer, sizeof(buffer), "%Y.%m.%d_%H:%M", &localTime);
+
+    std::string filename = "../experiments/experiments_data_base_" + std::string(buffer) + ".csv";
+
+    std::ofstream csv_file(filename);
     if (!csv_file.is_open())
     {
-        std::cerr << "Error: Cannot open experiments_data_base.csv for writing!" << std::endl;
+        std::cerr << "Error: Cannot open .csv for writing!" << std::endl;
         return;
     }
 
