@@ -217,38 +217,45 @@ DivModResult BigInt::divModShort(u32 v) const
     return r;
 }
 
-BigInt BigInt::bigPow(long long exponent) const 
+BigInt BigInt::bigPow(long long exponent) const
 {
+    if (exponent < 0) throw std::runtime_error("Negative exponent not supported");
+    if (exponent == 0) return BigInt(1LL);
+    if (isZero()) return BigInt(0LL);
+
     BigInt base = *this;
     BigInt result(1LL);
+
     BigInt tmp;
 
-    tmp.reserve((base.size + result.size > 1) ? (base.size + result.size) : 1);
+    size_t initialCapacity = result.size + base.size + 4;
+    tmp.reserve(initialCapacity);
 
     while (exponent > 0)
     {
+        size_t requiredSize = result.size + base.size;
+        if (tmp.capacity < requiredSize) tmp.reserve(requiredSize);
+
         if (exponent & 1LL)
         {
-            BigInt::multiplyArrays(result.a, result.size, base.a, base.size, tmp);
+            multiplyArrays(result.a, result.size, base.a, base.size, tmp);
             tmp.sign = result.sign * base.sign;
-
             tmp.trim();
-
             tmp.swap(result);
         }
 
-        BigInt::multiplyArrays(base.a, base.size, base.a, base.size, tmp);
-        tmp.sign = base.sign * base.sign;
+        requiredSize = base.size + base.size;
+        if (tmp.capacity < requiredSize) tmp.reserve(requiredSize);
 
+        multiplyArrays(base.a, base.size, base.a, base.size, tmp);
+        tmp.sign = 1;
         tmp.trim();
-
         tmp.swap(base);
 
         exponent >>= 1LL;
     }
 
     result.trim();
-
     return result;
 }
 
@@ -452,25 +459,25 @@ void BigInt::multiplyArrays(const u32* A, size_t sizeA, const u32* B, size_t siz
     if (sizeA == 0 || sizeB == 0) { res.size = 0; res.sign = 1; return; }
 
     size_t need = sizeA + sizeB;
-
-    res.reserve(need);
     res.size = need;
 
-    for (size_t i = 0; i < res.size; ++i) res.a[i] = 0u;
+    for (size_t i = 0; i < need; ++i) res.a[i] = 0u;
 
     for (size_t i = 0; i < sizeA; ++i)
     {
         u64 carry = 0;
         u64 ai = A[i];
-        for (size_t j = 0; j < sizeB || carry; ++j)
+        for (size_t j = 0; j < sizeB; ++j)
         {
-            u64 cur = (u64)res.a[i + j] + carry + ai * (j < sizeB ? (u64)B[j] : 0ULL);
-
+            u64 cur = (u64)res.a[i + j] + ai * (u64)B[j] + carry;
             res.a[i + j] = (u32)(cur % BASE);
             carry = cur / BASE;
         }
+        res.a[i + sizeB] += (u32)carry;
     }
+
     while (res.size > 0 && res.a[res.size - 1] == 0) --res.size;
+    if (res.size == 0) res.sign = 1;
 }
 
 int BigInt::absCompare(const BigInt& x, const BigInt& y)
