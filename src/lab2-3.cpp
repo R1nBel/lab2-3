@@ -1,5 +1,4 @@
-﻿#define WIN32_LEAN_AND_MEAN
-#include "BigInt.h"
+﻿#include "BigInt.h"
 #include <iostream>
 #include <cstdlib>
 #include <ctime>

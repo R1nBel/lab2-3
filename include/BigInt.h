@@ -33,11 +33,10 @@ public:
 
     friend BigInt operator+(const BigInt& x, const BigInt& y);
     friend BigInt operator-(const BigInt& x, const BigInt& y);
-    friend BigInt operator*(const BigInt& x, const BigInt& y);
     BigInt mulShort(u32 v) const;
 
     DivModResult divModShort(u32 v) const;
-    BigInt bigPow(long long exponent) const;
+    static BigInt mulMod(const BigInt& a, const BigInt& b, const BigInt& mod);
 
     friend bool operator==(const BigInt& x, const BigInt& y);
     friend bool operator!=(const BigInt& x, const BigInt& y);
@@ -55,7 +54,6 @@ public:
 private:
     void reserve(size_t new_capacity);
     void push_back(u32 x);
-    void pop_back();
     void trim();
     bool isZero() const;
     void read(const char* s);
@@ -63,7 +61,6 @@ private:
 
     static void addArrays(const u32* A, size_t sizeA, const u32* B, size_t sizeB, BigInt& res);
     static void subArrays(const u32* A, size_t sizeA, const u32* B, size_t sizeB, BigInt& res);
-    static void multiplyArrays(const u32* A, size_t sizeA, const u32* B, size_t sizeB, BigInt& res);
     static int absCompare(const BigInt& x, const BigInt& y);
     static char* readWordFromStream(std::istream& is);
 };
