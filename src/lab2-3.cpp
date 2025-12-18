@@ -321,7 +321,6 @@ void experiments_mulMod_memory_modulus(
         long long sum_allocations = 0;
 
         for (int e = 0; e < experiments_per_size; e++) {
-            // Генерация модуля
             BigInt modulus(1LL);
             for (unsigned long j = 0; j < blocks; j++) {
                 unsigned int block_val = 0;
@@ -332,15 +331,12 @@ void experiments_mulMod_memory_modulus(
                 modulus = modulus.mulShort(BigInt::BASE) + BigInt(static_cast<long long>(block_val));
             }
 
-            // Гарантируем, что модуль > 1
             if (modulus <= BigInt(1LL)) {
                 modulus = BigInt(2LL);
             }
 
-            // Сброс статистики памяти
             global_memory_stats.reset();
 
-            // Выполнение mulMod с измерением памяти
             BigInt result = a.mulMod(b, modulus);
 
             sum_peak_memory += global_memory_stats.peak_memory;
