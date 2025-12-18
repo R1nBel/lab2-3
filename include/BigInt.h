@@ -36,7 +36,7 @@ public:
     BigInt mulShort(u32 v) const;
 
     DivModResult divModShort(u32 v) const;
-    static BigInt mulMod(const BigInt& a, const BigInt& b, const BigInt& mod);
+    BigInt mulMod(const BigInt& b, const BigInt& mod);
 
     friend bool operator==(const BigInt& x, const BigInt& y);
     friend bool operator!=(const BigInt& x, const BigInt& y);
@@ -48,6 +48,8 @@ public:
     friend std::istream& operator>>(std::istream& is, BigInt& v);
     friend std::ostream& operator<<(std::ostream& os, const BigInt& v);
 
+    bool isZero() const;
+
     char* toChar() const;
     static BigInt fromChar(const char* s);
 
@@ -55,7 +57,6 @@ private:
     void reserve(size_t new_capacity);
     void push_back(u32 x);
     void trim();
-    bool isZero() const;
     void read(const char* s);
     void swap(BigInt& other) noexcept;
 

@@ -2,195 +2,93 @@
 #include <iostream>
 #include <cstdlib>
 #include <ctime>
-#include <chrono>
 #include <fstream>
 #include <string>
 #include <limits>
 #include <vector>
-#include <ctime>
+#include <map>
 
-void operations_count_pow_exp_experiments(unsigned long base_digits, unsigned long min_exp, unsigned long max_exp, unsigned long step_exp, int seed, int quantity_per_exp)
-{
-    std::time_t now = std::time(nullptr);
-    std::tm localTime{};
-    localtime_s(&localTime, &now);
-    char buffer[100];
-    std::strftime(buffer, sizeof(buffer), "%Y-%m-%d_%H-%M", &localTime);
+struct MemoryStats {
+    size_t total_allocations = 0;
+    size_t peak_memory = 0;
+    size_t current_memory = 0;
 
-    std::string filename = "../experiments/experiments_data_exp_" + std::string(buffer) + ".csv";
-    std::ofstream csv_file(filename);
-    if (!csv_file.is_open())
-    {
-        std::cerr << "Error: Cannot open .csv for writing!" << std::endl;
-        return;
+    void reset() {
+        total_allocations = 0;
+        peak_memory = 0;
+        current_memory = 0;
     }
 
-    csv_file << "experiment_number;exponent;avg_time_microseconds" << std::endl;
-
-    srand(static_cast<unsigned int>(seed));
-
-    int experiment_idx = 0;
-
-    std::vector<BigInt> bases;
-    bases.reserve(quantity_per_exp);
-
-    for (int q = 0; q < quantity_per_exp; q++)
-    {
-        std::string num_str;
-        num_str.reserve(base_digits);
-
-        num_str += static_cast<char>('1' + rand() % 9);
-
-        for (unsigned long d = 1; d < base_digits; d++)
-        {
-            num_str += static_cast<char>('0' + rand() % 10);
+    void allocate(size_t size) {
+        total_allocations++;
+        current_memory += size;
+        if (current_memory > peak_memory) {
+            peak_memory = current_memory;
         }
-
-        bases.emplace_back(num_str.c_str());
     }
 
-    std::cout << "Exponent experiments from " << min_exp
-        << " to " << max_exp << " step " << step_exp << std::endl;
-    std::cout << "Each exponent receives " << quantity_per_exp << " experiments" << std::endl;
-    std::cout << "------------------------------------------------" << std::endl;
-
-    for (unsigned long exp = min_exp; exp <= max_exp; exp += step_exp)
-    {
-        std::cout << "Processing exponent = " << exp << std::endl;
-
-        long long sum_time = 0;
-
-        for (int q = 0; q < quantity_per_exp; q++)
-        {
-            auto start = std::chrono::high_resolution_clock::now();
-            BigInt result = bases[q].bigPow(static_cast<long long>(exp));
-            auto end = std::chrono::high_resolution_clock::now();
-
-            auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-            sum_time += static_cast<long long>(duration.count());
-
-            std::cout << "  Experiment #" << experiment_idx
-                << " exp = " << exp
-                << ", time = " << duration.count() << " micros" << std::endl;
-
-            experiment_idx++;
+    void deallocate(size_t size) {
+        if (size <= current_memory) {
+            current_memory -= size;
         }
-
-        long long avg_time = sum_time / quantity_per_exp;
-        csv_file << experiment_idx - quantity_per_exp << ";"
-            << exp << ";"
-            << avg_time << std::endl;
-
-        std::cout << "AVERAGE for exponent " << exp
-            << ": time = " << avg_time << " micros" << std::endl;
-        std::cout << "------------------------------------------------" << std::endl;
     }
+};
 
-    csv_file.close();
-    std::cout << "All exponent experiments completed." << std::endl;
+MemoryStats global_memory_stats;
+
+void* operator new(size_t size) {
+    global_memory_stats.allocate(size);
+    return malloc(size);
 }
 
-void operations_count_pow_base_experiments(unsigned long min_blocks, unsigned long max_blocks, unsigned long step_blocks, unsigned long exponent, int seed, int experiments_per_size)
-{
-    std::time_t now = std::time(nullptr);
-    std::tm localTime{};
-    localtime_s(&localTime, &now);
-
-    char buffer[100];
-    std::strftime(buffer, sizeof(buffer), "%Y-%m-%d_%H-%M", &localTime);
-
-    std::string filename = "../experiments/experiments_data_base_" + std::string(buffer) + ".csv";
-
-    std::ofstream csv_file(filename);
-    if (!csv_file.is_open())
-    {
-        std::cerr << "Error: Cannot open .csv for writing!" << std::endl;
-        return;
-    }
-
-    csv_file << "experiment_number;base_blocks;avg_time_microseconds" << std::endl;
-
-    srand(static_cast<unsigned int>(seed));
-
-    int experiment_idx = 0;
-
-    std::cout << "Starting base-size dependence experiments..." << std::endl;
-    std::cout << "Exponent = " << exponent << std::endl;
-    std::cout << "------------------------------------------------" << std::endl;
-
-    for (unsigned long blocks = min_blocks; blocks <= max_blocks; blocks += step_blocks)
-    {
-        std::cout << "Generating bases with " << blocks << " blocks" << std::endl;
-
-        long long sum_time = 0;
-
-        for (int e = 0; e < experiments_per_size; e++)
-        {
-            BigInt a(1LL);
-
-            for (unsigned long j = 0; j < blocks; j++)
-            {
-                unsigned int block_val = 0;
-                for (int k = 0; k < 3; k++)
-                {
-                    block_val *= 1000;
-                    block_val += rand() % 1000;
-                }
-
-                a = a.mulShort(BigInt::BASE) + BigInt(static_cast<long long>(block_val));
-            }
-
-            auto start = std::chrono::high_resolution_clock::now();
-            BigInt result = a.bigPow(static_cast<long long>(exponent));
-            auto end = std::chrono::high_resolution_clock::now();
-
-            auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-            sum_time += static_cast<long long>(duration.count());
-
-            std::cout << "Experiment #" << experiment_idx
-                << ", base blocks = " << blocks
-                << ", time = " << duration.count() << " micros" << std::endl;
-
-            experiment_idx++;
-        }
-
-        long long avg_time = sum_time / experiments_per_size;
-        csv_file << experiment_idx - experiments_per_size << ";"
-            << blocks << ";"
-            << avg_time << std::endl;
-
-        std::cout << "AVERAGE for base blocks " << blocks
-            << ": time = " << avg_time << " micros" << std::endl;
-        std::cout << "------------------------------------------------" << std::endl;
-    }
-
-    csv_file.close();
-    std::cout << "All base-dependence experiments completed." << std::endl;
+void* operator new[](size_t size) {
+    global_memory_stats.allocate(size);
+    return malloc(size);
 }
 
-void manual_pow_test(int quantity)
-{
-    std::cout << "Starting manual testing..." << std::endl;
+void operator delete(void* ptr) noexcept {
+    free(ptr);
+}
+
+void operator delete[](void* ptr) noexcept {
+    free(ptr);
+}
+
+void manual_mulMod_test(int quantity) {
+    std::cout << "Starting manual mulMod testing..." << std::endl;
     std::cout << "------------------------------------------------" << std::endl;
 
-    for (int i = 0; i < quantity; i++)
-    {
-        long long a;
-        unsigned long m;
+    for (int i = 0; i < quantity; i++) {
+        long long a, b, m;
 
-        std::cout << "Enter SMALL base: ";
+        std::cout << "Enter SMALL a: ";
         std::cin >> a;
-        std::cout << "Enter exp: ";
+        std::cout << "Enter SMALL b: ";
+        std::cin >> b;
+        std::cout << "Enter SMALL m (must be positive): ";
         std::cin >> m;
 
+        if (m <= 0) {
+            std::cout << "Error: modulus must be positive!" << std::endl;
+            i--;
+            continue;
+        }
+
         BigInt bigA(a);
+        BigInt bigB(b);
+        BigInt bigM(m);
 
-        BigInt result = bigA.bigPow(static_cast<long long>(m));
+        global_memory_stats.reset();
 
-        long long ethalon_result = 1;
+        BigInt result = bigA.mulMod(bigB, bigM);
+
+        std::cout << "Memory usage - Total allocations: " << global_memory_stats.total_allocations
+            << ", Peak memory: " << global_memory_stats.peak_memory << " bytes" << std::endl;
+
         bool overflow = false;
+        long long ethalon_result = 0;
 
-        auto safe_multiply = [&](long long x, long long y) -> bool {
+        auto safe_multiply_mod = [&](long long x, long long y, long long mod) -> bool {
             if (x == 0 || y == 0) {
                 ethalon_result = 0;
                 return true;
@@ -221,21 +119,15 @@ void manual_pow_test(int quantity)
                 }
             }
 
-            ethalon_result = x * y;
-            return true;
-        };
-
-        for (unsigned long j = 0; j < m; j++)
-        {
-            if (!safe_multiply(ethalon_result, a))
-            {
-                overflow = true;
-                break;
+            long long product = x * y;
+            ethalon_result = product % mod;
+            if (ethalon_result < 0) {
+                ethalon_result += mod;
             }
-        }
+            return true;
+            };
 
-        if (overflow)
-        {
+        if (!safe_multiply_mod(a, b, m)) {
             std::cout << "Test #" << i << " - Skipped due to potential overflow" << std::endl;
             continue;
         }
@@ -243,33 +135,252 @@ void manual_pow_test(int quantity)
         BigInt bigEthalon(ethalon_result);
 
         std::cout << "Test #" << i
-            << ": base = " << a
-            << ", exp = " << m
-            << ", required result = " << ethalon_result
-            << ", result = " << result.toChar();
+            << ": a = " << a
+            << ", b = " << b
+            << ", m = " << m
+            << ", expected result = " << ethalon_result
+            << ", got = " << result.toChar();
 
-        if (result == bigEthalon)
-        {
+        if (result == bigEthalon) {
             std::cout << " - Passed";
         }
-        else
-        {
-            std::cout << " - Not Passed";
+        else {
+            std::cout << " - Failed";
             std::cout << "\n  Expected: " << bigEthalon.toChar();
             std::cout << "\n  Got: " << result.toChar();
         }
 
-        std::cout << std::endl;
+        std::cout << std::endl << std::endl;
     }
 }
 
-int main()
-{
-    //manual_pow_test(5);
+void experiments_mulMod_memory_factors(
+    unsigned long min_blocks,
+    unsigned long max_blocks,
+    unsigned long step_blocks,
+    unsigned long modulus_blocks,
+    int seed,
+    int experiments_per_size) {
 
-    operations_count_pow_exp_experiments(32, 2, 2048, 2, 0, 1);
+    std::time_t now = std::time(nullptr);
+    std::tm localTime{};
+    localtime_s(&localTime, &now);
 
-    //operations_count_pow_base_experiments(1, 64, 1, 64, 0, 10);
+    char buffer[100];
+    std::strftime(buffer, sizeof(buffer), "%Y-%m-%d_%H-%M", &localTime);
+
+    std::string filename = "../experiments/experiments_memory_factors_" + std::string(buffer) + ".csv";
+
+    std::ofstream csv_file(filename);
+    if (!csv_file.is_open()) {
+        std::cerr << "Error: Cannot open .csv for writing!" << std::endl;
+        return;
+    }
+
+    csv_file << "experiment_number;factor_blocks;modulus_blocks;peak_memory_bytes;total_allocations" << std::endl;
+
+    srand(static_cast<unsigned int>(seed));
+
+    int experiment_idx = 0;
+
+    BigInt modulus(1LL);
+    for (unsigned long j = 0; j < modulus_blocks; j++) {
+        unsigned int block_val = 0;
+        for (int k = 0; k < 3; k++) {
+            block_val *= 1000;
+            block_val += rand() % 1000;
+        }
+        modulus = modulus.mulShort(BigInt::BASE) + BigInt(static_cast<long long>(block_val));
+    }
+
+    if (modulus <= BigInt(1LL)) {
+        modulus = BigInt(2LL);
+    }
+
+    std::cout << "Starting memory analysis for mulMod factors dependence..." << std::endl;
+    std::cout << "Modulus has " << modulus_blocks << " blocks" << std::endl;
+    std::cout << "Modulus value: " << modulus.toChar() << std::endl;
+    std::cout << "------------------------------------------------" << std::endl;
+
+    for (unsigned long blocks = min_blocks; blocks <= max_blocks; blocks += step_blocks) {
+        std::cout << "Testing factors with " << blocks << " blocks" << std::endl;
+
+        long long sum_peak_memory = 0;
+        long long sum_allocations = 0;
+
+        for (int e = 0; e < experiments_per_size; e++) {
+            BigInt a(1LL);
+            for (unsigned long j = 0; j < blocks; j++) {
+                unsigned int block_val = 0;
+                for (int k = 0; k < 3; k++) {
+                    block_val *= 1000;
+                    block_val += rand() % 1000;
+                }
+                a = a.mulShort(BigInt::BASE) + BigInt(static_cast<long long>(block_val));
+            }
+
+            BigInt b(1LL);
+            for (unsigned long j = 0; j < blocks; j++) {
+                unsigned int block_val = 0;
+                for (int k = 0; k < 3; k++) {
+                    block_val *= 1000;
+                    block_val += rand() % 1000;
+                }
+                b = b.mulShort(BigInt::BASE) + BigInt(static_cast<long long>(block_val));
+            }
+
+            global_memory_stats.reset();
+
+            BigInt result = a.mulMod(b, modulus);
+
+            sum_peak_memory += global_memory_stats.peak_memory;
+            sum_allocations += global_memory_stats.total_allocations;
+
+            std::cout << "Experiment #" << experiment_idx
+                << ", factor blocks = " << blocks
+                << ", modulus blocks = " << modulus_blocks
+                << ", peak memory = " << global_memory_stats.peak_memory << " bytes"
+                << ", allocations = " << global_memory_stats.total_allocations << std::endl;
+
+            experiment_idx++;
+        }
+
+        long long avg_peak_memory = sum_peak_memory / experiments_per_size;
+        long long avg_allocations = sum_allocations / experiments_per_size;
+
+        csv_file << experiment_idx - experiments_per_size << ";"
+            << blocks << ";"
+            << modulus_blocks << ";"
+            << avg_peak_memory << ";"
+            << avg_allocations << std::endl;
+
+        std::cout << "AVERAGE for factor blocks " << blocks
+            << ": peak memory = " << avg_peak_memory << " bytes"
+            << ", allocations = " << avg_allocations << std::endl;
+        std::cout << "------------------------------------------------" << std::endl;
+    }
+
+    csv_file.close();
+    std::cout << "All memory experiments for factors completed." << std::endl;
+}
+
+void experiments_mulMod_memory_modulus(
+    unsigned long min_blocks,
+    unsigned long max_blocks,
+    unsigned long step_blocks,
+    unsigned long factor_blocks,
+    int seed,
+    int experiments_per_size) {
+
+    std::time_t now = std::time(nullptr);
+    std::tm localTime{};
+    localtime_s(&localTime, &now);
+
+    char buffer[100];
+    std::strftime(buffer, sizeof(buffer), "%Y-%m-%d_%H-%M", &localTime);
+
+    std::string filename = "../experiments/experiments_memory_modulus_" + std::string(buffer) + ".csv";
+
+    std::ofstream csv_file(filename);
+    if (!csv_file.is_open()) {
+        std::cerr << "Error: Cannot open .csv for writing!" << std::endl;
+        return;
+    }
+
+    csv_file << "experiment_number;factor_blocks;modulus_blocks;peak_memory_bytes;total_allocations" << std::endl;
+
+    srand(static_cast<unsigned int>(seed));
+
+    int experiment_idx = 0;
+
+    BigInt a(1LL);
+    BigInt b(1LL);
+    for (unsigned long j = 0; j < factor_blocks; j++) {
+        unsigned int block_val_a = 0;
+        unsigned int block_val_b = 0;
+        for (int k = 0; k < 3; k++) {
+            block_val_a *= 1000;
+            block_val_a += rand() % 1000;
+            block_val_b *= 1000;
+            block_val_b += rand() % 1000;
+        }
+        a = a.mulShort(BigInt::BASE) + BigInt(static_cast<long long>(block_val_a));
+        b = b.mulShort(BigInt::BASE) + BigInt(static_cast<long long>(block_val_b));
+    }
+
+    std::cout << "Starting memory analysis for mulMod modulus dependence..." << std::endl;
+    std::cout << "Factors have " << factor_blocks << " blocks each" << std::endl;
+    std::cout << "Factor a: " << a.toChar() << std::endl;
+    std::cout << "Factor b: " << b.toChar() << std::endl;
+    std::cout << "------------------------------------------------" << std::endl;
+
+    for (unsigned long blocks = min_blocks; blocks <= max_blocks; blocks += step_blocks) {
+        std::cout << "Testing modulus with " << blocks << " blocks" << std::endl;
+
+        long long sum_peak_memory = 0;
+        long long sum_allocations = 0;
+
+        for (int e = 0; e < experiments_per_size; e++) {
+            // Генерация модуля
+            BigInt modulus(1LL);
+            for (unsigned long j = 0; j < blocks; j++) {
+                unsigned int block_val = 0;
+                for (int k = 0; k < 3; k++) {
+                    block_val *= 1000;
+                    block_val += rand() % 1000;
+                }
+                modulus = modulus.mulShort(BigInt::BASE) + BigInt(static_cast<long long>(block_val));
+            }
+
+            // Гарантируем, что модуль > 1
+            if (modulus <= BigInt(1LL)) {
+                modulus = BigInt(2LL);
+            }
+
+            // Сброс статистики памяти
+            global_memory_stats.reset();
+
+            // Выполнение mulMod с измерением памяти
+            BigInt result = a.mulMod(b, modulus);
+
+            sum_peak_memory += global_memory_stats.peak_memory;
+            sum_allocations += global_memory_stats.total_allocations;
+
+            std::cout << "Experiment #" << experiment_idx
+                << ", factor blocks = " << factor_blocks
+                << ", modulus blocks = " << blocks
+                << ", peak memory = " << global_memory_stats.peak_memory << " bytes"
+                << ", allocations = " << global_memory_stats.total_allocations << std::endl;
+
+            experiment_idx++;
+        }
+
+        long long avg_peak_memory = sum_peak_memory / experiments_per_size;
+        long long avg_allocations = sum_allocations / experiments_per_size;
+
+        csv_file << experiment_idx - experiments_per_size << ";"
+            << factor_blocks << ";"
+            << blocks << ";"
+            << avg_peak_memory << ";"
+            << avg_allocations << std::endl;
+
+        std::cout << "AVERAGE for modulus blocks " << blocks
+            << ": peak memory = " << avg_peak_memory << " bytes"
+            << ", allocations = " << avg_allocations << std::endl;
+        std::cout << "------------------------------------------------" << std::endl;
+    }
+
+    csv_file.close();
+    std::cout << "All memory experiments for modulus completed." << std::endl;
+}
+
+int main() {
+
+    // manual_mulMod_test(5);
+
+    experiments_mulMod_memory_factors(1, 32, 1, 4, 0, 10);
+
+    // experiments_mulMod_memory_modulus(1, 32, 1, 4, 0, 10);
 
     return 0;
 }

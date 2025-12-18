@@ -201,10 +201,10 @@ DivModResult BigInt::divModShort(u32 v) const
     return r;
 }
 
-BigInt BigInt::mulMod(const BigInt& a, const BigInt& b, const BigInt& mod)
+BigInt BigInt::mulMod(const BigInt& b, const BigInt& mod)
 {
     BigInt result(0LL);
-    BigInt x = a;
+    BigInt x = *this;
     BigInt y = b;
     x.sign = y.sign = 1;
 
