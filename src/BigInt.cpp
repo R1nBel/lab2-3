@@ -158,7 +158,6 @@ BigInt BigInt::mulShort(u32 v) const
     r.sign = sign;
     r.reserve(size + 1);
     r.size = size;
-    for (size_t i = 0; i < r.size; ++i) r.a[i] = 0u;
 
     u64 carry = 0;
     for (size_t i = 0; i < size; ++i)
@@ -186,7 +185,6 @@ DivModResult BigInt::divModShort(u32 v) const
     q.sign = sign;
     q.reserve(size);
     q.size = size;
-    for (size_t i = 0; i < q.size; ++i) q.a[i] = 0u;
 
     u64 rem = 0;
     for (int i = (int)size - 1; i >= 0; --i)
@@ -355,7 +353,6 @@ void BigInt::reserve(size_t new_capacity)
 
     u32* new_a = new u32[target];
     for (size_t i = 0; i < size; ++i) new_a[i] = a[i];
-    for (size_t i = size; i < target; ++i) new_a[i] = 0u;
 
     delete[] a;
     a = new_a;
