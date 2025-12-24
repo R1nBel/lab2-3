@@ -219,38 +219,43 @@ DivModResult BigInt::divModShort(u32 v) const
 
 BigInt BigInt::bigPow(long long exponent) const
 {
-    if (exponent < 0) throw std::runtime_error("Negative exponent not supported");
+    if (exponent < 0) throw std::runtime_error("neg");
     if (exponent == 0) return BigInt(1LL);
     if (isZero()) return BigInt(0LL);
 
-    BigInt base = *this;
+    BigInt base(*this);
     BigInt result(1LL);
 
+    size_t tmpMax = base.size * (size_t)exponent * 2 + 2;
+    if (tmpMax < base.size * 2) tmpMax = base.size * 2;
+
+    const size_t HARD_LIMIT = 200000000;
+    if (tmpMax > HARD_LIMIT) throw std::runtime_error("too big");
+
+    result.reserve(tmpMax);
+    base.reserve(tmpMax);
+
+    u32* buf = new u32[tmpMax];
     BigInt tmp;
+    tmp.a = buf;
+    tmp.capacity = tmpMax;
+    tmp.size = 0;
+    tmp.sign = 1;
 
-    size_t initialCapacity = result.size + base.size;
-    tmp.reserve(initialCapacity);
-
-    while (exponent > 0)
+    while (exponent)
     {
-        size_t requiredSize = result.size + base.size;
-        if (tmp.capacity < requiredSize) tmp.reserve(requiredSize);
-
         if (exponent & 1LL)
         {
             multiplyBigInts(result, base, tmp);
             tmp.sign = result.sign * base.sign;
             tmp.trim();
-            tmp.swap(result);
+            result.swap(tmp);
         }
-
-        requiredSize = base.size + base.size;
-        if (tmp.capacity < requiredSize) tmp.reserve(requiredSize);
 
         multiplyBigInts(base, base, tmp);
         tmp.sign = 1;
         tmp.trim();
-        tmp.swap(base);
+        base.swap(tmp);
 
         exponent >>= 1LL;
     }
@@ -466,9 +471,13 @@ void BigInt::subArrays(const u32* A, size_t sizeA, const u32* B, size_t sizeB, B
 
 void BigInt::multiplyBigInts(const BigInt& a, const BigInt& b, BigInt& res)
 {
-    //const u32* A, size_t sizeA, const u32* B, size_t sizeB, BigInt& res
-
     if (a.size == 0 || b.size == 0) { res.size = 0; res.sign = 1; return; }
+
+    size_t need = a.size + b.size;
+    if (need > res.capacity) throw std::runtime_error("capacity");
+
+    res.size = need;
+    std::memset(res.a, 0, need * sizeof(u32));
 
     for (size_t i = 0; i < a.size; ++i)
     {
@@ -480,10 +489,10 @@ void BigInt::multiplyBigInts(const BigInt& a, const BigInt& b, BigInt& res)
             res.a[i + j] = (u32)(cur % BASE);
             carry = cur / BASE;
         }
-        res.a[i + b.size] += (u32)carry;
+        res.a[i + b.size] = (u32)((u64)res.a[i + b.size] + carry);
     }
 
-    while (res.size > 0 && res.a[res.size - 1] == 0) --res.size;
+    while (res.size && res.a[res.size - 1] == 0) --res.size;
     if (res.size == 0) res.sign = 1;
 }
 

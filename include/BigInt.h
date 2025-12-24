@@ -67,6 +67,9 @@ private:
     static void subArrays(const u32* A, size_t sizeA, const u32* B, size_t sizeB, BigInt& res);
     static int absCompare(const BigInt& x, const BigInt& y);
     static char* readWordFromStream(std::istream& is);
+
+	static void multiplyBigInts_safe(const BigInt& a, const BigInt& B, BigInt& res);
+
 };
 
 struct DivModResult
