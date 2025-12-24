@@ -194,7 +194,10 @@ BigInt BigInt::mulShort(u32 v) const
 
 DivModResult BigInt::divModShort(u32 v) const
 {
-    if (v == 0) throw std::runtime_error("Division by zero");
+    if (v == 0) {
+        std::cerr << "Exception: Division by zero" << std::endl;
+        throw std::runtime_error("Division by zero");
+    }
 
     BigInt q;
     q.sign = sign;
@@ -219,7 +222,10 @@ DivModResult BigInt::divModShort(u32 v) const
 
 BigInt BigInt::bigPow(long long exponent) const
 {
-    if (exponent < 0) throw std::runtime_error("neg");
+    if (exponent < 0) {
+        std::cerr << "Exception: neg" << std::endl;
+        throw std::runtime_error("neg");
+    }
     if (exponent == 0) return BigInt(1LL);
     if (isZero()) return BigInt(0LL);
 
@@ -230,7 +236,10 @@ BigInt BigInt::bigPow(long long exponent) const
     if (tmpMax < base.size * 2) tmpMax = base.size * 2;
 
     const size_t HARD_LIMIT = 200000000;
-    if (tmpMax > HARD_LIMIT) throw std::runtime_error("too big");
+    if (tmpMax > HARD_LIMIT) {
+        std::cerr << "Exception: too big" << std::endl;
+        throw std::runtime_error("too big");
+    }
 
     result.reserve(tmpMax);
     base.reserve(tmpMax);
@@ -474,7 +483,10 @@ void BigInt::multiplyBigInts(const BigInt& a, const BigInt& b, BigInt& res)
     if (a.size == 0 || b.size == 0) { res.size = 0; res.sign = 1; return; }
 
     size_t need = a.size + b.size;
-    if (need > res.capacity) throw std::runtime_error("capacity");
+    if (need > res.capacity) {
+        std::cerr << "Exception: capacity" << std::endl;
+        throw std::runtime_error("capacity");
+    }
 
     res.size = need;
     std::memset(res.a, 0, need * sizeof(u32));
