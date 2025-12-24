@@ -64,7 +64,6 @@ void operations_count_pow_exp_experiments(unsigned long base_digits, unsigned lo
         {
             auto start = std::chrono::high_resolution_clock::now();
             BigInt result = bases[q].bigPow(static_cast<long long>(exp));
-            std::cout << result << std::endl;
             auto end = std::chrono::high_resolution_clock::now();
 
             auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
@@ -89,84 +88,6 @@ void operations_count_pow_exp_experiments(unsigned long base_digits, unsigned lo
 
     csv_file.close();
     std::cout << "All exponent experiments completed." << std::endl;
-}
-
-void operations_count_pow_base_experiments(unsigned long min_blocks, unsigned long max_blocks, unsigned long step_blocks, unsigned long exponent, int seed, int experiments_per_size)
-{
-    std::time_t now = std::time(nullptr);
-    std::tm localTime{};
-    localtime_s(&localTime, &now);
-
-    char buffer[100];
-    std::strftime(buffer, sizeof(buffer), "%Y-%m-%d_%H-%M", &localTime);
-
-    std::string filename = "../experiments/experiments_data_base_" + std::string(buffer) + ".csv";
-
-    std::ofstream csv_file(filename);
-    if (!csv_file.is_open())
-    {
-        std::cerr << "Error: Cannot open .csv for writing!" << std::endl;
-        return;
-    }
-
-    csv_file << "experiment_number;base_blocks;avg_time_microseconds" << std::endl;
-
-    srand(static_cast<unsigned int>(seed));
-
-    int experiment_idx = 0;
-
-    std::cout << "Starting base-size dependence experiments..." << std::endl;
-    std::cout << "Exponent = " << exponent << std::endl;
-    std::cout << "------------------------------------------------" << std::endl;
-
-    for (unsigned long blocks = min_blocks; blocks <= max_blocks; blocks += step_blocks)
-    {
-        std::cout << "Generating bases with " << blocks << " blocks" << std::endl;
-
-        long long sum_time = 0;
-
-        for (int e = 0; e < experiments_per_size; e++)
-        {
-            BigInt a(1LL);
-
-            for (unsigned long j = 0; j < blocks; j++)
-            {
-                unsigned int block_val = 0;
-                for (int k = 0; k < 3; k++)
-                {
-                    block_val *= 1000;
-                    block_val += rand() % 1000;
-                }
-
-                a = a.mulShort(BigInt::BASE) + BigInt(static_cast<long long>(block_val));
-            }
-
-            auto start = std::chrono::high_resolution_clock::now();
-            BigInt result = a.bigPow(static_cast<long long>(exponent));
-            auto end = std::chrono::high_resolution_clock::now();
-
-            auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-            sum_time += static_cast<long long>(duration.count());
-
-            std::cout << "Experiment #" << experiment_idx
-                << ", base blocks = " << blocks
-                << ", time = " << duration.count() << " micros" << std::endl;
-
-            experiment_idx++;
-        }
-
-        long long avg_time = sum_time / experiments_per_size;
-        csv_file << experiment_idx - experiments_per_size << ";"
-            << blocks << ";"
-            << avg_time << std::endl;
-
-        std::cout << "AVERAGE for base blocks " << blocks
-            << ": time = " << avg_time << " micros" << std::endl;
-        std::cout << "------------------------------------------------" << std::endl;
-    }
-
-    csv_file.close();
-    std::cout << "All base-dependence experiments completed." << std::endl;
 }
 
 void manual_pow_test(int quantity)

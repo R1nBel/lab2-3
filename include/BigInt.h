@@ -52,7 +52,7 @@ public:
     char* toChar() const;
     static BigInt fromChar(const char* s);
 
-    static void multiplyArrays(const BigInt& a, const BigInt& B, BigInt& res);
+    static void multiplyBigInts(const BigInt& a, const BigInt& B, BigInt& res);
 
 private:
     void reserve(size_t new_capacity);

@@ -150,34 +150,18 @@ BigInt operator-(const BigInt& x, const BigInt& y)
     return x + (-y);
 }
 
-BigInt operator*(const BigInt& a, const BigInt& b)
+BigInt operator*(const BigInt& x, const BigInt& y)
 {
-    BigInt res;
+    if (x.isZero() || y.isZero()) return BigInt(0LL);
 
-    if (a.size == 0 || b.size == 0) { res.size = 0; res.sign = 1; return -1; }
+    BigInt r;
+    r.sign = x.sign * y.sign;
 
-    size_t need = a.size + b.size;
-    res.size = need;
+    BigInt::multiplyBigInts(x, y, r);
 
-    for (size_t i = 0; i < need; ++i) res.a[i] = 0u;
+    r.trim();
 
-    for (size_t i = 0; i < a.size; ++i)
-    {
-        u64 carry = 0;
-        u64 ai = a.a[i];
-        for (size_t j = 0; j < b.size; ++j)
-        {
-            u64 cur = (u64)res.a[i + j] + ai * (u64)b.a[j] + carry;
-            res.a[i + j] = (u32)(cur % BigInt::BASE);
-            carry = cur / BigInt::BASE;
-        }
-        res.a[i + b.size] += (u32)carry;
-    }
-
-    while (res.size > 0 && res.a[res.size - 1] == 0) --res.size;
-    if (res.size == 0) res.sign = 1;
-
-    return res;
+    return r;
 }
 
 BigInt BigInt::mulShort(u32 v) const
@@ -254,7 +238,7 @@ BigInt BigInt::bigPow(long long exponent) const
 
         if (exponent & 1LL)
         {
-            multiplyArrays(base, *this, tmp);
+            multiplyBigInts(result, base, tmp);
             tmp.sign = result.sign * base.sign;
             tmp.trim();
             tmp.swap(result);
@@ -263,7 +247,7 @@ BigInt BigInt::bigPow(long long exponent) const
         requiredSize = base.size + base.size;
         if (tmp.capacity < requiredSize) tmp.reserve(requiredSize);
 
-        multiplyArrays(base, *this, tmp);
+        multiplyBigInts(base, base, tmp);
         tmp.sign = 1;
         tmp.trim();
         tmp.swap(base);
@@ -414,10 +398,21 @@ void BigInt::pop_back()
 
 void BigInt::swap(BigInt& other) noexcept
 {
-    std::swap(a, other.a);
-    std::swap(size, other.size);
-    std::swap(capacity, other.capacity);
-    std::swap(sign, other.sign);
+    u32* temp_a = a;
+    a = other.a;
+    other.a = temp_a;
+
+    size_t temp_size = size;
+    size = other.size;
+    other.size = temp_size;
+
+    size_t temp_capacity = capacity;
+    capacity = other.capacity;
+    other.capacity = temp_capacity;
+
+    int temp_sign = sign;
+    sign = other.sign;
+    other.sign = temp_sign;
 }
 
 bool BigInt::isZero() const
@@ -469,16 +464,11 @@ void BigInt::subArrays(const u32* A, size_t sizeA, const u32* B, size_t sizeB, B
     while (res.size > 0 && res.a[res.size - 1] == 0) --res.size;
 }
 
-void BigInt::multiplyArrays(const BigInt& a, const BigInt& b, BigInt& res)
+void BigInt::multiplyBigInts(const BigInt& a, const BigInt& b, BigInt& res)
 {
     //const u32* A, size_t sizeA, const u32* B, size_t sizeB, BigInt& res
 
     if (a.size == 0 || b.size == 0) { res.size = 0; res.sign = 1; return; }
-
-    size_t need = a.size + b.size;
-    res.size = need;
-
-    for (size_t i = 0; i < need; ++i) res.a[i] = 0u;
 
     for (size_t i = 0; i < a.size; ++i)
     {
