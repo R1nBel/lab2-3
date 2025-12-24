@@ -8,9 +8,8 @@
 #include <string>
 #include <limits>
 #include <vector>
-#include <ctime>
 
-void operations_count_pow_exp_experiments(unsigned long base_digits, unsigned long min_exp, unsigned long max_exp, unsigned long step_exp, int seed, int quantity_per_exp)
+void operations_count_pow_exp_experiments(unsigned long base_digits, unsigned long min_exp, unsigned long max_exp, int seed, int quantity_per_exp)
 {
     std::time_t now = std::time(nullptr);
     std::tm localTime{};
@@ -51,11 +50,11 @@ void operations_count_pow_exp_experiments(unsigned long base_digits, unsigned lo
     }
 
     std::cout << "Exponent experiments from " << min_exp
-        << " to " << max_exp << " step " << step_exp << std::endl;
+        << " to " << max_exp << std::endl;
     std::cout << "Each exponent receives " << quantity_per_exp << " experiments" << std::endl;
     std::cout << "------------------------------------------------" << std::endl;
 
-    for (unsigned long exp = min_exp; exp <= max_exp; exp += step_exp)
+    for (unsigned long exp = min_exp; exp <= max_exp; exp *= 2)
     {
         std::cout << "Processing exponent = " << exp << std::endl;
 
@@ -65,6 +64,7 @@ void operations_count_pow_exp_experiments(unsigned long base_digits, unsigned lo
         {
             auto start = std::chrono::high_resolution_clock::now();
             BigInt result = bases[q].bigPow(static_cast<long long>(exp));
+            std::cout << result << std::endl;
             auto end = std::chrono::high_resolution_clock::now();
 
             auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
@@ -224,7 +224,7 @@ void manual_pow_test(int quantity)
 
             ethalon_result = x * y;
             return true;
-        };
+            };
 
         for (unsigned long j = 0; j < m; j++)
         {
@@ -266,9 +266,9 @@ void manual_pow_test(int quantity)
 
 int main()
 {
-    //manual_pow_test(5);
+    //manual_pow_test(2);
 
-    operations_count_pow_exp_experiments(32, 2, 2048, 2, 0, 1);
+    operations_count_pow_exp_experiments(32, 2, 8192, 0, 1);
 
     //operations_count_pow_base_experiments(1, 64, 1, 64, 0, 10);
 

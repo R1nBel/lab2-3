@@ -6,17 +6,17 @@
 
 BigInt::BigInt() : a(nullptr), size(0), capacity(0), sign(1) {}
 
-BigInt::BigInt(long long v) : a(nullptr), size(0), capacity(0), sign(1) 
+BigInt::BigInt(long long v) : a(nullptr), size(0), capacity(0), sign(1)
 {
     *this = v;
 }
 
-BigInt::BigInt(const char* s) : a(nullptr), size(0), capacity(0), sign(1) 
+BigInt::BigInt(const char* s) : a(nullptr), size(0), capacity(0), sign(1)
 {
     read(s);
 }
 
-BigInt::BigInt(const BigInt& other) : a(nullptr), size(0), capacity(0), sign(1) 
+BigInt::BigInt(const BigInt& other) : a(nullptr), size(0), capacity(0), sign(1)
 {
     if (other.size > 0)
     {
@@ -150,18 +150,34 @@ BigInt operator-(const BigInt& x, const BigInt& y)
     return x + (-y);
 }
 
-BigInt operator*(const BigInt& x, const BigInt& y)
+BigInt operator*(const BigInt& a, const BigInt& b)
 {
-    if (x.isZero() || y.isZero()) return BigInt(0LL);
+    BigInt res;
 
-    BigInt r;
-    r.sign = x.sign * y.sign;
+    if (a.size == 0 || b.size == 0) { res.size = 0; res.sign = 1; return -1; }
 
-    BigInt::multiplyArrays(x.a, x.size, y.a, y.size, r);
+    size_t need = a.size + b.size;
+    res.size = need;
 
-    r.trim();
+    for (size_t i = 0; i < need; ++i) res.a[i] = 0u;
 
-    return r;
+    for (size_t i = 0; i < a.size; ++i)
+    {
+        u64 carry = 0;
+        u64 ai = a.a[i];
+        for (size_t j = 0; j < b.size; ++j)
+        {
+            u64 cur = (u64)res.a[i + j] + ai * (u64)b.a[j] + carry;
+            res.a[i + j] = (u32)(cur % BigInt::BASE);
+            carry = cur / BigInt::BASE;
+        }
+        res.a[i + b.size] += (u32)carry;
+    }
+
+    while (res.size > 0 && res.a[res.size - 1] == 0) --res.size;
+    if (res.size == 0) res.sign = 1;
+
+    return res;
 }
 
 BigInt BigInt::mulShort(u32 v) const
@@ -238,7 +254,7 @@ BigInt BigInt::bigPow(long long exponent) const
 
         if (exponent & 1LL)
         {
-            multiplyArrays(result.a, result.size, base.a, base.size, tmp);
+            multiplyArrays(base, *this, tmp);
             tmp.sign = result.sign * base.sign;
             tmp.trim();
             tmp.swap(result);
@@ -247,7 +263,7 @@ BigInt BigInt::bigPow(long long exponent) const
         requiredSize = base.size + base.size;
         if (tmp.capacity < requiredSize) tmp.reserve(requiredSize);
 
-        multiplyArrays(base.a, base.size, base.a, base.size, tmp);
+        multiplyArrays(base, *this, tmp);
         tmp.sign = 1;
         tmp.trim();
         tmp.swap(base);
@@ -270,7 +286,7 @@ bool operator==(const BigInt& x, const BigInt& y)
 
 bool operator!=(const BigInt& x, const BigInt& y) { return !(x == y); }
 
-bool operator<(const BigInt& x, const BigInt& y) 
+bool operator<(const BigInt& x, const BigInt& y)
 {
     if (x.sign != y.sign) return x.sign < y.sign;
 
@@ -379,7 +395,6 @@ void BigInt::reserve(size_t new_capacity)
 
     u32* new_a = new u32[target];
     for (size_t i = 0; i < size; ++i) new_a[i] = a[i];
-    for (size_t i = size; i < target; ++i) new_a[i] = 0u;
 
     delete[] a;
     a = new_a;
@@ -454,26 +469,28 @@ void BigInt::subArrays(const u32* A, size_t sizeA, const u32* B, size_t sizeB, B
     while (res.size > 0 && res.a[res.size - 1] == 0) --res.size;
 }
 
-void BigInt::multiplyArrays(const u32* A, size_t sizeA, const u32* B, size_t sizeB, BigInt& res)
+void BigInt::multiplyArrays(const BigInt& a, const BigInt& b, BigInt& res)
 {
-    if (sizeA == 0 || sizeB == 0) { res.size = 0; res.sign = 1; return; }
+    //const u32* A, size_t sizeA, const u32* B, size_t sizeB, BigInt& res
 
-    size_t need = sizeA + sizeB;
+    if (a.size == 0 || b.size == 0) { res.size = 0; res.sign = 1; return; }
+
+    size_t need = a.size + b.size;
     res.size = need;
 
     for (size_t i = 0; i < need; ++i) res.a[i] = 0u;
 
-    for (size_t i = 0; i < sizeA; ++i)
+    for (size_t i = 0; i < a.size; ++i)
     {
         u64 carry = 0;
-        u64 ai = A[i];
-        for (size_t j = 0; j < sizeB; ++j)
+        u64 ai = a.a[i];
+        for (size_t j = 0; j < b.size; ++j)
         {
-            u64 cur = (u64)res.a[i + j] + ai * (u64)B[j] + carry;
+            u64 cur = (u64)res.a[i + j] + ai * (u64)b.a[j] + carry;
             res.a[i + j] = (u32)(cur % BASE);
             carry = cur / BASE;
         }
-        res.a[i + sizeB] += (u32)carry;
+        res.a[i + b.size] += (u32)carry;
     }
 
     while (res.size > 0 && res.a[res.size - 1] == 0) --res.size;
