@@ -19,7 +19,11 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\BigInt.cpp" />
+    <ClCompile Include="..\src\BigIntAlgorythm.cpp" />
+    <ClCompile Include="..\src\BigIntComps.cpp" />
+    <ClCompile Include="..\src\BigIntConstructors.cpp" />
+    <ClCompile Include="..\src\BigIntOperations.cpp" />
+    <ClCompile Include="..\src\BigIntUtils.cpp" />
     <ClCompile Include="..\src\lab2-3.cpp" />
   </ItemGroup>
   <ItemGroup>

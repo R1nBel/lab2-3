@@ -1,73 +1,27 @@
 ﻿#include "BigInt.h"
-#include <cstring>
-#include <cctype>
-#include <stdexcept>
-#include <iostream>
-
-BigInt::BigInt() : a(nullptr), size(0), capacity(0), sign(1) {}
-
-BigInt::BigInt(long long v) : a(nullptr), size(0), capacity(0), sign(1) 
-{
-    *this = v;
-}
-
-BigInt::BigInt(const char* s) : a(nullptr), size(0), capacity(0), sign(1) 
-{
-    read(s);
-}
-
-BigInt::BigInt(const BigInt& other) : a(nullptr), size(0), capacity(0), sign(1) 
-{
-    if (other.size > 0)
-    {
-        reserve(other.size);
-
-        for (size_t i = 0; i < other.size; ++i) a[i] = other.a[i];
-
-        size = other.size;
-        sign = other.sign;
-    }
-    else
-    {
-        sign = other.sign;
-    }
-}
-
-BigInt::~BigInt()
-{
-    delete[] a;
-}
 
 BigInt& BigInt::operator=(const BigInt& other)
 {
     if (this == &other) return *this;
 
-    if (other.size <= capacity)
+    if (other.size > capacity)
+    {
+        delete[] a;
+        a = nullptr;
+        size = capacity = 0;
+        if (other.size > 0) reserve(other.size);
+    }
+
+    if (other.size > 0)
     {
         for (size_t i = 0; i < other.size; ++i) a[i] = other.a[i];
-
         size = other.size;
         sign = other.sign;
     }
     else
     {
-        delete[] a;
-        a = nullptr;
-        size = capacity = 0;
-
-        if (other.size > 0)
-        {
-            reserve(other.size);
-
-            for (size_t i = 0; i < other.size; ++i) a[i] = other.a[i];
-
-            size = other.size;
-            sign = other.sign;
-        }
-        else
-        {
-            sign = other.sign;
-        }
+        size = 0;
+        sign = 1;
     }
 
     return *this;
@@ -81,21 +35,30 @@ BigInt& BigInt::operator=(long long v)
     sign = 1;
 
     if (v == 0) return *this;
-    if (v < 0) { sign = -1; v = -v; }
-    else sign = 1;
 
-    long long tmp = v;
+    unsigned long long uv;
+    if (v < 0) {
+        sign = -1;
+        uv = (unsigned long long)(-(v + 1)) + 1ULL;
+    }
+    else {
+        sign = 1;
+        uv = (unsigned long long)v;
+    }
+
+    unsigned long long tmp = uv;
     int cnt = 0;
     while (tmp > 0) { tmp /= BASE; ++cnt; }
 
     reserve((size_t)cnt);
     size = 0;
-    while (v > 0)
+    while (uv > 0)
     {
-        a[size++] = (u32)(v % BASE);
-        v /= BASE;
+        a[size++] = (u32)(uv % BASE);
+        uv /= BASE;
     }
 
+    trim();
     return *this;
 }
 
@@ -150,6 +113,9 @@ BigInt operator-(const BigInt& x, const BigInt& y)
     return x + (-y);
 }
 
+
+
+
 BigInt BigInt::mulShort(u32 v) const
 {
     if (v == 0 || isZero()) return BigInt(0LL);
@@ -201,63 +167,6 @@ DivModResult BigInt::divModShort(u32 v) const
     return r;
 }
 
-BigInt BigInt::mulMod(const BigInt& b, const BigInt& mod)
-{
-    BigInt result(0LL);
-    BigInt x = *this;
-    BigInt y = b;
-    x.sign = y.sign = 1;
-
-    while (!y.isZero())
-    {
-        if (y.a[0] & 1u)
-        {
-            result = result + x;
-            if (result >= mod)
-                result = result - mod;
-        }
-
-        x = x + x;
-        if (x >= mod)
-            x = x - mod;
-
-        u32 carry = 0;
-        for (int i = (int)y.size - 1; i >= 0; --i)
-        {
-            u64 cur = (u64)carry * BASE + y.a[i];
-            y.a[i] = (u32)(cur >> 1);
-            carry = (u32)(cur & 1);
-        }
-        y.trim();
-    }
-    return result;
-}
-
-bool operator==(const BigInt& x, const BigInt& y)
-{
-    if (x.sign != y.sign || x.size != y.size) return false;
-
-    for (size_t i = 0; i < x.size; ++i) if (x.a[i] != y.a[i]) return false;
-
-    return true;
-}
-
-bool operator!=(const BigInt& x, const BigInt& y) { return !(x == y); }
-
-bool operator<(const BigInt& x, const BigInt& y) 
-{
-    if (x.sign != y.sign) return x.sign < y.sign;
-
-    int cmp = BigInt::absCompare(x, y);
-
-    return (x.sign == 1) ? (cmp < 0) : (cmp > 0);
-}
-
-bool operator<=(const BigInt& x, const BigInt& y) { return !(y < x); }
-
-bool operator>(const BigInt& x, const BigInt& y) { return y < x; }
-
-bool operator>=(const BigInt& x, const BigInt& y) { return !(x < y); }
 
 std::istream& operator>>(std::istream& is, BigInt& v)
 {
@@ -295,6 +204,9 @@ std::ostream& operator<<(std::ostream& os, const BigInt& v)
     }
     return os;
 }
+
+
+
 
 char* BigInt::toChar() const
 {
@@ -343,46 +255,8 @@ char* BigInt::toChar() const
 
 BigInt BigInt::fromChar(const char* s) { return BigInt(s); }
 
-void BigInt::reserve(size_t new_capacity)
-{
-    if (new_capacity <= capacity) return;
 
-    size_t target = new_capacity;
-    if (target < 4) target = 4;
-    if (capacity > 0 && target < capacity * 2) target = capacity * 2;
 
-    u32* new_a = new u32[target];
-    for (size_t i = 0; i < size; ++i) new_a[i] = a[i];
-
-    delete[] a;
-    a = new_a;
-    capacity = target;
-}
-
-void BigInt::push_back(u32 x)
-{
-    if (size >= capacity) reserve(size + 1);
-    a[size++] = x;
-}
-
-void BigInt::swap(BigInt& other) noexcept
-{
-    std::swap(a, other.a);
-    std::swap(size, other.size);
-    std::swap(capacity, other.capacity);
-    std::swap(sign, other.sign);
-}
-
-bool BigInt::isZero() const
-{
-    return size == 0;
-}
-
-void BigInt::trim()
-{
-    while (size > 0 && a[size - 1] == 0) --size;
-    if (size == 0) sign = 1;
-}
 
 void BigInt::addArrays(const u32* A, size_t sizeA, const u32* B, size_t sizeB, BigInt& res)
 {
