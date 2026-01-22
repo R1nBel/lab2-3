@@ -38,5 +38,22 @@ bool BigInt::isZero() const
 void BigInt::trim()
 {
     while (size > 0 && a[size - 1] == 0) --size;
-    if (size == 0) sign = 1;
+    if (size == 0) {
+        sign = 1;
+        if (capacity > 0 && a != nullptr) a[0] = 0;
+    }
+}
+
+void BigInt::addTo(const BigInt& other)
+{
+    BigInt tmp;
+    addArrays(a, size, other.a, other.size, tmp);
+    swap(tmp);
+}
+
+void BigInt::subFrom(const BigInt& other)
+{
+    BigInt tmp;
+    subArrays(a, size, other.a, other.size, tmp);
+    swap(tmp);
 }

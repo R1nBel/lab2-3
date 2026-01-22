@@ -1,33 +1,33 @@
 ﻿#include "BigInt.h"
 
-BigInt BigInt::mulMod(const BigInt& a, const BigInt& b, const BigInt& mod)
+BigInt BigInt::mulMod(const BigInt& x, const BigInt& y, const BigInt& mod)
 {
-    BigInt result(0LL);
-    BigInt x = a;
-    BigInt y = b;
-    x.sign = y.sign = 1;
+    if (mod.isZero()) throw std::invalid_argument("mod = 0");
+    if (x.isZero() || y.isZero()) return BigInt(0LL);
 
-    while (!y.isZero())
-    {
-        if (y.a[0] & 1u)
-        {
-            result = result + x;
-            if (result >= mod)
-                result = result - mod;
+    BigInt a = x % mod;
+    if (a.sign < 0) a = a + mod;
+
+    BigInt b = y;
+    if (b.sign < 0) b.sign = 1;
+
+    BigInt res(0LL);
+    res.reserve(mod.size + 1);
+    res.size = 1; res.a[0] = 0; res.sign = 1;
+
+    a.reserve(mod.size + 1);
+
+    while (!b.isZero()) {
+        if (b.isOdd()) {
+            res.addAssign(a);
+            while (res >= mod) res.subAssign(mod);
         }
 
-        x = x + x;
-        if (x >= mod)
-            x = x - mod;
+        a.mul2Assign();
+        while (a >= mod) a.subAssign(mod);
 
-        u32 carry = 0;
-        for (int i = (int)y.size - 1; i >= 0; --i)
-        {
-            u64 cur = (u64)carry * BASE + y.a[i];
-            y.a[i] = (u32)(cur >> 1);
-            carry = (u32)(cur & 1);
-        }
-        y.trim();
+        b.div2Assign();
     }
-    return result;
+
+    return res;
 }

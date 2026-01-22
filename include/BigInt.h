@@ -54,12 +54,25 @@ public:
     char* toChar() const;
     static BigInt fromChar(const char* s);
 
+    bool isOdd() const;
+    BigInt div2() const;
+    BigInt operator%(const BigInt& other) const;
+    static bool needDecrement(u64 q, u32 v1, u32 v2, u32 u0, u32 u1, u32 u2);
+
+    void addAssign(const BigInt& other);  
+    void subAssign(const BigInt& other);   
+    void mul2Assign();                     
+    void div2Assign();
+
 private:
     void reserve(size_t new_capacity);
     void push_back(u32 x);
     void trim();
     void read(const char* s);
     void swap(BigInt& other) noexcept;
+
+    void addTo(const BigInt& other);
+    void subFrom(const BigInt& other);
 
     static void addArrays(const u32* A, size_t sizeA, const u32* B, size_t sizeB, BigInt& res);
     static void subArrays(const u32* A, size_t sizeA, const u32* B, size_t sizeB, BigInt& res);

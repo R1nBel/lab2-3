@@ -54,31 +54,28 @@ void operator delete[](void* ptr) noexcept {
     free(ptr);
 }
 
-void manual_mulMod_test(int quantity) {
+void manual_mulMod_test() {
     std::cout << "Starting manual mulMod testing..." << std::endl;
     std::cout << "------------------------------------------------" << std::endl;
 
-    for (int i = 0; i < quantity; i++) {
-        BigInt a, b, m;
-        BigInt result;
+    BigInt a, b, m;
+    BigInt result;
 
-        std::cout << "Enter BIG a: ";
-        std::cin >> a;
-        std::cout << "Enter BIG b: ";
-        std::cin >> b;
-        std::cout << "Enter BIG m (must be positive): ";
-        std::cin >> m;
+    std::cout << "Enter BIG a: ";
+    std::cin >> a;
+    std::cout << "Enter BIG b: ";
+    std::cin >> b;
+    std::cout << "Enter BIG m (must be positive): ";
+    std::cin >> m;
 
-        if (m < 1) {
-            std::cout << "Error: modulus must be positive!" << std::endl;
-            i--;
-            continue;
-        }
-
-        result = BigInt::mulMod(a, b, m);
-        
-        std::cout << "Result = " << result << std::endl;
+    if (m < 1) {
+        std::cout << "Error: modulus must be positive!" << std::endl;
+        return;
     }
+
+    result = BigInt::mulMod(a, b, m);
+        
+    std::cout << "Result = " << result << std::endl;
 }
 
 void experiments_mulMod_memory_asymptotic(
@@ -104,7 +101,7 @@ void experiments_mulMod_memory_asymptotic(
         return;
     }
 
-    csv_file << "modulus_blocks;factor_blocks;avg_peak_memory;avg_allocations\n";
+    csv_file << "modulus_blocks;factor_blocks;avg_peak_memory\n";
 
     srand(static_cast<unsigned int>(seed));
 
@@ -118,7 +115,6 @@ void experiments_mulMod_memory_asymptotic(
         unsigned long factor_blocks = (2 * modulus_blocks) / 3;
 
         long long sum_peak_memory = 0;
-        long long sum_allocations = 0;
 
         std::cout << "Modulus blocks = " << modulus_blocks
             << ", factor blocks = " << factor_blocks << std::endl;
@@ -163,21 +159,17 @@ void experiments_mulMod_memory_asymptotic(
             BigInt result = BigInt::mulMod(a, b, modulus);
 
             sum_peak_memory += global_memory_stats.peak_memory;
-            sum_allocations += global_memory_stats.total_allocations;
         }
 
         long long avg_peak_memory =
             sum_peak_memory / experiments_per_size;
-        long long avg_allocations =
-            sum_allocations / experiments_per_size;
 
         csv_file << modulus_blocks << ";"
             << factor_blocks << ";"
-            << avg_peak_memory << ";"
-            << avg_allocations << "\n";
+            << avg_peak_memory << "\n";
 
         std::cout << "AVG peak memory: " << avg_peak_memory
-            << " bytes, allocations: " << avg_allocations << std::endl;
+            << " bytes" << std::endl;
         std::cout << "------------------------------------------------\n";
     }
 
@@ -194,7 +186,7 @@ int main() {
 
     experiments_mulMod_memory_asymptotic(min_moduls_blocks, max_moduls_blocks, exp_per_size, seed);
 
-    //manual_mulMod_test(1);
+    //manual_mulMod_test();
 
     return 0;
 }

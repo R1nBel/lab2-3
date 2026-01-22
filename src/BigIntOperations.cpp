@@ -370,3 +370,174 @@ char* BigInt::readWordFromStream(std::istream& is)
 
     return buf;
 }
+
+bool BigInt::isOdd() const {
+    if (isZero()) return false;
+    return (a[0] & 1u) != 0;
+}
+
+BigInt BigInt::div2() const
+{
+    if (isZero()) return BigInt(0LL);
+
+    BigInt result;
+    result.sign = sign;
+    result.reserve(size);
+    result.size = size;
+
+    u64 carry = 0;
+    for (int i = (int)size - 1; i >= 0; --i)
+    {
+        u64 cur = carry * (u64)BASE + a[i];
+        result.a[i] = (u32)(cur / 2);
+        carry = cur % 2;
+    }
+
+    result.trim();
+    return result;
+}
+
+BigInt BigInt::operator%(const BigInt& other) const
+{
+    if (other.isZero())
+        throw std::runtime_error("Division by zero");
+
+    BigInt a = *this;
+    BigInt b = other;
+
+    a.sign = 1;
+    b.sign = 1;
+
+    if (a < b) return a;
+
+    u32 norm = 1;
+    while ((u64)b.a[b.size - 1] * norm < BASE / 2)
+        norm <<= 1;
+
+    if (norm > 1) {
+        a = a.mulShort(norm);
+        b = b.mulShort(norm);
+    }
+
+    size_t n = b.size;
+    size_t m = a.size - n;
+
+    BigInt r = a;
+
+    for (int j = (int)m; j >= 0; --j)
+    {
+        u32 u0 = (r.size > j + n) ? r.a[j + n] : 0;
+        u32 u1 = (r.size > j + n - 1) ? r.a[j + n - 1] : 0;
+        u32 u2 = (r.size > j + n - 2) ? r.a[j + n - 2] : 0;
+
+        u32 v1 = b.a[n - 1];
+        u32 v2 = (n > 1) ? b.a[n - 2] : 0;
+
+        u64 dividend = (u64)u0 * BASE + u1;
+        u64 qhat = dividend / v1;
+        if (qhat >= BASE) qhat = BASE - 1;
+
+        while (needDecrement(qhat, v1, v2, u0, u1, u2))
+            --qhat;
+
+        BigInt prod = b.mulShort((u32)qhat);
+
+        if (j > 0) {
+            prod.reserve(prod.size + j);
+            for (int i = (int)prod.size - 1; i >= 0; --i)
+                prod.a[i + j] = prod.a[i];
+            for (size_t i = 0; i < j; ++i)
+                prod.a[i] = 0;
+            prod.size += j;
+        }
+
+        while (r < prod) {
+            --qhat;
+            prod = b.mulShort((u32)qhat);
+            if (j > 0) {
+                prod.reserve(prod.size + j);
+                for (int i = (int)prod.size - 1; i >= 0; --i)
+                    prod.a[i + j] = prod.a[i];
+                for (size_t i = 0; i < j; ++i)
+                    prod.a[i] = 0;
+                prod.size += j;
+            }
+        }
+
+        r = r - prod;
+    }
+
+    if (norm > 1) {
+        r = r.divModShort(norm).q;
+    }
+
+    r.trim();
+    return r;
+}
+
+
+bool BigInt::needDecrement(
+    u64 q, u32 v1, u32 v2,
+    u32 u0, u32 u1, u32 u2)
+{
+    u64 left_hi = q * v1;
+    u64 left_lo = q * v2;
+
+    if (left_hi > u0) return true;
+    if (left_hi < u0) return false;
+
+    u64 right_mid = (u64)u1 * BASE + u2;
+    return left_lo > right_mid;
+}
+
+void BigInt::addAssign(const BigInt& other)
+{
+    size_t n = (size > other.size) ? size : other.size;
+    reserve(n + 1);
+
+    u64 carry = 0;
+    size_t i = 0;
+    for (; i < n || carry; ++i) {
+        if (i >= size) a[i] = 0, size = i + 1;
+        u64 sum = (u64)a[i] + carry;
+        if (i < other.size) sum += other.a[i];
+        a[i] = (u32)(sum % BASE);
+        carry = sum / BASE;
+    }
+    trim();
+}
+
+void BigInt::subAssign(const BigInt& other)
+{
+    u64 borrow = 0;
+    for (size_t i = 0; i < other.size || borrow; ++i) {
+        u64 sub = borrow + (i < other.size ? other.a[i] : 0);
+        if ((u64)a[i] >= sub) { a[i] -= (u32)sub; borrow = 0; }
+        else { a[i] = (u32)((u64)a[i] + BASE - sub); borrow = 1; }
+    }
+    trim();
+}
+
+void BigInt::mul2Assign()
+{
+    u64 carry = 0;
+    reserve(size + 1);
+    for (size_t i = 0; i < size; ++i) {
+        u64 cur = (u64)a[i] * 2 + carry;
+        a[i] = (u32)(cur % BASE);
+        carry = cur / BASE;
+    }
+    if (carry) a[size++] = (u32)carry;
+    trim();
+}
+
+void BigInt::div2Assign()
+{
+    u64 carry = 0;
+    for (int i = (int)size - 1; i >= 0; --i) {
+        u64 cur = carry * (u64)BASE + a[i];
+        a[i] = (u32)(cur / 2);
+        carry = cur % 2;
+    }
+    trim();
+}
