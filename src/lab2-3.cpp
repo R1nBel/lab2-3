@@ -125,7 +125,6 @@ void experiments_mulMod_memory_asymptotic(
 
         for (int e = 0; e < experiments_per_size; e++) {
 
-            /* -------- generate modulus -------- */
             BigInt modulus(1LL);
             for (unsigned long i = 0; i < modulus_blocks; i++) {
                 unsigned int block = 0;
@@ -139,7 +138,6 @@ void experiments_mulMod_memory_asymptotic(
             if (modulus <= BigInt(1LL))
                 modulus = BigInt(2LL);
 
-            /* -------- generate factor a -------- */
             BigInt a(1LL);
             for (unsigned long i = 0; i < factor_blocks; i++) {
                 unsigned int block = 0;
@@ -150,7 +148,6 @@ void experiments_mulMod_memory_asymptotic(
                     + BigInt(static_cast<long long>(block));
             }
 
-            /* -------- generate factor b -------- */
             BigInt b(1LL);
             for (unsigned long i = 0; i < factor_blocks; i++) {
                 unsigned int block = 0;

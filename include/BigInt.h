@@ -37,7 +37,7 @@ public:
 
     DivModResult divModShort(u32 v) const;
 
-    static BigInt mulMod(BigInt& x, BigInt& y, const BigInt& mod);
+    static BigInt mulMod(const BigInt& x, const BigInt& y, const BigInt& mod);
 
     friend bool operator==(const BigInt& x, const BigInt& y);
     friend bool operator!=(const BigInt& x, const BigInt& y);

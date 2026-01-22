@@ -1,8 +1,11 @@
 ﻿#include "BigInt.h"
 
-BigInt BigInt::mulMod(BigInt& x, BigInt& y, const BigInt& mod)
+BigInt BigInt::mulMod(const BigInt& a, const BigInt& b, const BigInt& mod)
 {
     BigInt result(0LL);
+    BigInt x = a;
+    BigInt y = b;
+    x.sign = y.sign = 1;
 
     while (!y.isZero())
     {

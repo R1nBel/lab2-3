@@ -114,8 +114,6 @@ BigInt operator-(const BigInt& x, const BigInt& y)
 }
 
 
-
-
 BigInt BigInt::mulShort(u32 v) const
 {
     if (v == 0 || isZero()) return BigInt(0LL);
@@ -206,8 +204,6 @@ std::ostream& operator<<(std::ostream& os, const BigInt& v)
 }
 
 
-
-
 char* BigInt::toChar() const
 {
     if (isZero())
@@ -254,8 +250,6 @@ char* BigInt::toChar() const
 }
 
 BigInt BigInt::fromChar(const char* s) { return BigInt(s); }
-
-
 
 
 void BigInt::addArrays(const u32* A, size_t sizeA, const u32* B, size_t sizeB, BigInt& res)
